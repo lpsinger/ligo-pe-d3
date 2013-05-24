@@ -3,148 +3,195 @@
 	<head>
 		<title>BAYESTAR batch sky localization results</title>
 		<style>
-		.line {
-			fill: none;
-			stroke: steelBlue;
-			stroke-width: 2px;
-		}
-		.diagonal {
-			fill: none;
-			stroke: black;
-			stroke-dasharray: 10;
-		}
-		.axis text
-		{
-			font-family: sans-serif;
-			font-size: 10px;
-		}
-		.axis path, .axis line
-		{
-			fill: none;
-			stroke: #000;
-			stroke-width: 1.5px;
-			shape-rendering: crispEdges;
-		}
-		label {
-			position: absolute;
-			top: 10px;
-			left: 10px;
-		}
+.line {
+	fill: none;
+	stroke: steelBlue;
+	stroke-width: 2px;
+}
+.diagonal {
+	fill: none;
+	stroke: #999;
+	stroke-dasharray: 3;
+}
+.axis text
+{
+	font-family: sans-serif;
+	font-size: 10px;
+}
+.axis path, .axis line
+{
+	fill: none;
+	stroke: #000;
+	stroke-width: 1.5px;
+	shape-rendering: crispEdges;
+}
+label {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+}
+.pp_points {
+	fill: none;
+}
+.pp_line {
+	fill: none;
+	stroke: #000;
+}
+.gridx, .gridy {
+	stroke: #ccc;
+	stroke-width: 0.5px;
+}
 		</style>
 	</head>
 	<body>
 		<label><input type="range" id="far_cut" min="-14" max="1" step="1" value="-4">FAR &leq; 10<sup><span id="far_cut_text"></span></sup></label>
 		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 		<script type="text/javascript">
-			d3.csv("toa_snr.csv", function(allData) {
-				// These are the names of the fields that should be converted to floats.
-				var floatFields = "far,searched_area,searched_prob,offset,runtime".split(",");
+d3.csv("toa_snr.csv", function(allData) {
+	// These are the names of the fields that should be converted to floats.
+	var floatFields = "far,searched_area,searched_prob,offset,runtime".split(",");
 
-				// Convert certain fields to floats.
-				allData.forEach(function(d) {
-					floatFields.forEach(function(fieldName) {
-						d[fieldName] = +d[fieldName];
-					});
-				});
+	// Convert certain fields to floats.
+	allData.forEach(function(d) {
+		floatFields.forEach(function(fieldName) {
+			d[fieldName] = +d[fieldName];
+		});
+	});
+	var j = 0;
+	allData = allData.filter(function (d) { return ((j++) % 10 == 0); })
 
-				// Sort data.
-				allData.sort(function(a, b) {
-					return d3.ascending(a['searched_prob'], b['searched_prob']);
-				});
+	// Sort data.
+	allData.sort(function(a, b) {
+		return d3.ascending(a['searched_prob'], b['searched_prob']);
+	});
 
-				data = [];
+	var far_cut_text = d3.select("#far_cut_text"),
+		far_cut = d3.select("#far_cut"),
+		far_cut_value = far_cut.property('value');
 
-				function filterData(predicate) {
-					data.splice(0, data.length);
-					allData.forEach(function (d) {
-						if (predicate(d)) {
-							data.push(d);
-						}
-					});
+	var
+		WIDTH = 400,
+		HEIGHT = 400,
+		MARGINS = {top: 20, right: 20, bottom: 50, left: 50},
+		xRange = d3.scale.linear()
+			.domain([0, 1])
+			.range([MARGINS.left, WIDTH - MARGINS.right]),
+		yRange = d3.scale.linear()
+			.domain([0, 1])
+			.range([HEIGHT - MARGINS.top, MARGINS.bottom]),
+		xAxis = d3.svg.axis()
+			.scale(xRange)
+			.orient("bottom"),
+		yAxis = d3.svg.axis()
+			.scale(yRange)
+			.orient("left");
 
-					// Add fractional index to data.
-					for (var i = 0; i < data.length; i ++)
-						data[i]['cumulative_fraction'] = i / data.length;
-				};
+	var svg = d3.select("body").append("svg")
+		.attr("width", WIDTH)
+		.attr("heigth", HEIGHT);
 
-				function predicateFarCut(v) {
-					return function predicateFarCut(d) {
-						return d['far'] <= Math.pow(10, v);
-					};
-				}
+	var line = d3.svg.line()
+		.interpolate('linear');
 
-				var far_cut_text = d3.select("#far_cut_text");
+	svg.append("g")
+		.attr("class", "x axis")
+		.attr("transform", "translate(0," + (HEIGHT - MARGINS.top) + ")")
+		.call(xAxis)
+    .append("text")
+		.attr("x", (WIDTH - MARGINS.left - MARGINS.right)/2 + MARGINS.left)
+		.attr("y", "3em")
+		.style("text-anchor", "middle")
+		.text("Searched probability");
 
-				filterData(predicateFarCut(d3.select('#far_cut').property('value')));
-				far_cut_text.text(d3.select('#far_cut').property('value'));
+	svg.append("g")
+		.attr("class", "y axis")
+		.attr("transform", "translate(" + (MARGINS.left) + ",0)")
+		.call(yAxis)
+    .append("text")
+		.attr("transform", "rotate(-90)")
+		.attr("x", -((HEIGHT - MARGINS.top - MARGINS.bottom)/2
+			+ MARGINS.bottom))
+		.attr("y", "-3em")
+		.style("text-anchor", "middle")
+		.text("Cumulative fraction");
 
-				var
-					WIDTH = 300,
-					HEIGHT = 300,
-					MARGINS = {top: 20, right: 20, bottom: 50, left: 50},
-					xRange = d3.scale.linear()
-						.domain([0, 1])
-						.range([MARGINS.left, WIDTH - MARGINS.right]),
-					yRange = d3.scale.linear()
-						.domain([0, 1])
-						.range([HEIGHT - MARGINS.top, MARGINS.bottom]),
-					xAxis = d3.svg.axis()
-						.scale(xRange)
-						.orient("bottom"),
-					yAxis = d3.svg.axis()
-						.scale(yRange)
-						.orient("left");
+	svg.append("path")
+		.attr("class", "pp_line");
 
-				var svg = d3.select("body").append("svg")
-					.attr("width", 400)
-					.attr("heigth", 400);
+	svg.append("path")
+		.attr("class", "diagonal")
+		.datum([{x: 0, y: 0}, {x: 1, y: 1}])
+		.attr("d", d3.svg.line()
+			.x(function(d) { return xRange(d.x); })
+			.y(function(d) { return yRange(d.y); })
+		);
 
-				svg.append("g")
-					.attr("class", "x axis")
-					.attr("transform", "translate(0," + (HEIGHT - MARGINS.top) + ")")
-					.call(xAxis)
-			    .append("text")
-				  .attr("x", (WIDTH - MARGINS.left - MARGINS.right)/2 + MARGINS.left)
-				  .attr("y", "3em")
-			      .style("text-anchor", "middle")
-			      .text("Searched probability");
+	svg.selectAll(".gridx").data(xRange.ticks(5)).enter()
+		.append("path")
+		.attr("class", "gridx")
+		.attr("d", function(d) {
+			return "M" + xRange(d) + " " + yRange(1) + "L" + xRange(d) + " " + (yRange(0));
+		});
 
-				svg.append("g")
-					.attr("class", "y axis")
-					.attr("transform", "translate(" + (MARGINS.left) + ",0)")
-					.call(yAxis)
-			    .append("text")
-			      .attr("transform", "rotate(-90)")
-				  .attr("x", -((HEIGHT - MARGINS.top - MARGINS.bottom)/2 + MARGINS.bottom))
-				  .attr("y", "-3em")
-			      .style("text-anchor", "middle")
-			      .text("Cumulative fraction");
+	svg.selectAll(".gridy").data(yRange.ticks(5)).enter()
+		.append("path")
+		.attr("class", "gridy")
+		.attr("d", function(d) {
+			return "M" + xRange(0) + " " + yRange(d) + "L" + xRange(1) + " " + (yRange(d));
+		});
 
-				var line = d3.svg.line()
-					.y(function(d) { return yRange(d['cumulative_fraction']); })
-					.x(function(d) { return xRange(d['searched_prob']); })
-					.interpolate('linear');
-
-				var path = svg.append("path")
-					.datum(data)
-					.attr("class", "line")
-					.attr("d", line);
-
-				svg.append("path")
-					.datum([{x: 0, y: 0}, {x: 1, y: 1}])
-					.attr("class", "diagonal")
-					.attr("d",
-						d3.svg.line()
-							.x(function(d) { return xRange(d.x); })
-							.y(function(d) { return yRange(d.y); })
-					);
-
-				d3.select("#far_cut").on("change", function() {
-					filterData(predicateFarCut(this.value));
-					far_cut_text.text(this.value);
-					path.transition().ease("linear").attr("d", line);
-				});
+	function update() {
+		var log_min_far = far_cut.property("value"),
+			min_far = Math.pow(10, log_min_far),
+			data = allData.filter(function(d) {
+				return d.far <= min_far;
 			});
+		far_cut_text.text(far_cut_value);
+
+		var path = svg.selectAll(".pp_points")
+			.data(data, function(d) { return d.objid; });
+
+		path.exit().style('stroke', 'red').transition().attr("transform", function(d) {
+			return "translate(" + xRange(d.searched_prob) + ","
+				+ yRange(0) + ")";
+		}).remove();
+
+		path.style('stroke', 'steelBlue')
+			.transition().attr("transform", function(d, i) {
+				return "translate(" + xRange(d.searched_prob) + ","
+					+ yRange(i / data.length) + ")";
+			});
+
+		path.enter().append("path")
+			.attr("class", "pp_points")
+			.attr("transform", function(d, i) {
+				return "translate(" + xRange(d.searched_prob) + ","
+					+ yRange(1) + ")";
+			})
+			.style('stroke', 'green')
+			.transition()
+			.attr("transform", function(d, i) {
+				return "translate(" + xRange(d.searched_prob) + ","
+					+ yRange(i / data.length) + ")";
+			})
+			.attr("d", d3.svg.symbol().size(8))
+			.transition().duration(0).style('stroke', 'steelBlue');
+
+		line
+			.x(function(d, i) { return xRange(d.searched_prob); })
+			.y(function(d, i) { return yRange(i / data.length); });
+
+		svg.selectAll('.pp_line')
+			.style('stroke', '#ccc')
+			.datum(data)
+			.attr("d", line)
+			.transition().style('stroke', '#000');
+	}
+
+	d3.select("#far_cut").on("change", update);
+
+	update();
+});
 		</script>
 	</body>
 </html>
