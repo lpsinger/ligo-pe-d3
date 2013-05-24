@@ -27,8 +27,12 @@
 }
 label {
 	position: absolute;
-	top: 10px;
-	left: 10px;
+	top: 80px;
+	left: 400px;
+}
+#far_cut {
+	-webkit-appearance: slider-vertical;
+	height: 300px;
 }
 .pp_points {
 	fill: none;
@@ -44,7 +48,7 @@ label {
 		</style>
 	</head>
 	<body>
-		<label><input type="range" id="far_cut" min="-14" max="1" step="1" value="-4">FAR &leq; 10<sup><span id="far_cut_text"></span></sup></label>
+		<label><input type="range" id="far_cut" min="-14" max="1" step="1" value="-4">FAR &leq; 10<sup><span id="far_cut_text">-4</span></sup></label>
 		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 		<script type="text/javascript">
 d3.csv("toa_snr.csv", function(allData) {
@@ -146,7 +150,6 @@ d3.csv("toa_snr.csv", function(allData) {
 			data = allData.filter(function(d) {
 				return d.far <= min_far;
 			});
-		far_cut_text.text(far_cut_value);
 
 		var path = svg.selectAll(".pp_points")
 			.data(data, function(d) { return d.objid; });
@@ -186,6 +189,8 @@ d3.csv("toa_snr.csv", function(allData) {
 			.datum(data)
 			.attr("d", line)
 			.transition().style('stroke', '#000');
+
+		far_cut_text.text(log_min_far);
 	}
 
 	d3.select("#far_cut").on("change", update);
