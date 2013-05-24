@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<title>BAYESTAR batch sky localization results</title>
+<link href='http://fonts.googleapis.com/css?family=Arvo|Ubuntu' rel='stylesheet' type='text/css'>
 		<style>
 .line {
 	fill: none;
@@ -15,8 +16,8 @@
 }
 .axis text
 {
-	font-family: sans-serif;
-	font-size: 10px;
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 12px;
 }
 .axis path, .axis line
 {
@@ -33,6 +34,8 @@ label {
 #far_cut {
 	-webkit-appearance: slider-vertical;
 	height: 300px;
+	width: 20px;
+	margin-left: 40px;
 }
 .pp_points {
 	fill: none;
@@ -45,9 +48,19 @@ label {
 	stroke: #ccc;
 	stroke-width: 0.5px;
 }
+body, div {
+	font-family: 'Ubuntu', sans-serif;
+}
+h1 {
+	font-family: 'Arvo', serif;
+	position: absolute;
+	top: 450px;
+	left: 50px;
+}
 		</style>
 	</head>
 	<body>
+		<h1>BAYESTAR injection summary</h1>
 		<label><input type="range" id="far_cut" min="-14" max="1" step="1" value="-4">FAR &leq; 10<sup><span id="far_cut_text">-4</span></sup></label>
 		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 		<script type="text/javascript">
