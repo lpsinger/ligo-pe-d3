@@ -4,46 +4,46 @@
 		<title>Scattergrid</title>
 		<link href="//fonts.googleapis.com/css?family=Arvo|Ubuntu" rel="stylesheet" type="text/css">
 		<style>
-.line {
-	fill: none;
-	stroke: steelBlue;
-	stroke-width: 2px;
-}
-.diagonal {
-	fill: none;
-	stroke: #999;
-	stroke-dasharray: 3;
-}
-.axis text
-{
-	font-family: 'Ubuntu', sans-serif;
-	font-size: 12px;
-}
-.axis path, .axis line, rect.axis
-{
-	fill: none;
-	stroke: #999;
-	stroke-width: 1px;
-	shape-rendering: crispEdges;
-}
-.grid {
-	stroke: #ccc;
-	stroke-width: 0.5px;
-}
-.brush .extent {
-  stroke: #fff;
-  fill-opacity: .125;
-  shape-rendering: crispEdges;
-}
-body, div {
-	font-family: 'Ubuntu', sans-serif;
-}
-#header {
-	position: absolute;
-	top: 100px;
-	left: 300px;
-	width: 400px;
-}
+			.line {
+				fill: none;
+				stroke: steelBlue;
+				stroke-width: 2px;
+			}
+			.diagonal {
+				fill: none;
+				stroke: #999;
+				stroke-dasharray: 3;
+			}
+			.axis text
+			{
+				font-family: 'Ubuntu', sans-serif;
+				font-size: 12px;
+			}
+			.axis path, .axis line, rect.axis
+			{
+				fill: none;
+				stroke: #999;
+				stroke-width: 1px;
+				shape-rendering: crispEdges;
+			}
+			.grid {
+				stroke: #ccc;
+				stroke-width: 0.5px;
+			}
+			.brush .extent {
+			  stroke: #fff;
+			  fill-opacity: .125;
+			  shape-rendering: crispEdges;
+			}
+			body, div {
+				font-family: 'Ubuntu', sans-serif;
+			}
+			#header {
+				position: absolute;
+				top: 100px;
+				left: 300px;
+				width: 400px;
+			}
 		</style>
 	</head>
 	<body>
@@ -52,177 +52,25 @@ body, div {
 			Drag to select ranges of parameters.
 		</div>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
+		<script src="d3.scattergrid.js" charset="utf-8"></script>
 		<script type="text/javascript">
-d3.tsv("posterior_samples_cold.tsv", function(data) {
+			d3.tsv("posterior_samples_cold.tsv", function(data) {
 
-	var CELLWIDTH = 200,
-		CELLPADDING = 10,
-		PADDING = {top: 0, right: 0, bottom: 30, left: 60},
-		axesdata = [
-			["dist"],
-			["ra"],
-			["dec"],
-			["iota"]
-		];
-	var brushes = [];
+				// Convert data to numeric types.
+				data.forEach(function(d) {
+					d3.keys(d).forEach(function(e) {
+						d[e] = +d[e];
+					});
+				});
 
-	// Convert data to appropriate types.
-	data.forEach(function(d) {
-		delete d.coinc_event_id;
-		d3.keys(d).forEach(function(e) {
-			d[e] = +d[e];
-		});
-	});
-
-	// DEBUG: Decimate data to speed up plotting.
-	// {
-	// 	var j = 0;
-	// 	data = data.filter(function (d) { return ((j++) % 10 == 0); });
-	// }
-
-	// Create SVG drawing.
-	var svg = d3.select("body").append("svg")
-		.attr("width", CELLWIDTH * (axesdata.length - 1) + PADDING.left + PADDING.right)
-		.attr("height", CELLWIDTH * (axesdata.length - 1) + PADDING.top + PADDING.bottom);
-	var defs = svg.append("defs");
-
-	// Create individual axes.
-	axesdata.forEach(function(xaxisdata, xi) {
-		var xkey = xaxisdata[0];
-
-		var xscale = d3.scale.linear()
-			.domain(d3.extent(data, function(d) { return d[xkey]; }))
-			.range([
-				PADDING.left + CELLWIDTH * xi + CELLPADDING,
-				PADDING.left + CELLWIDTH * (xi + 1) - CELLPADDING]).nice();
-
-		var xaxis = d3.svg.axis().scale(xscale).orient("bottom");
-		
-		if (xi < axesdata.length - 1)
-		{
-			svg.append("g")
-				.classed("x axis", true)
-				.attr("transform", "translate(0,"
-					+ (PADDING.top + CELLWIDTH * (axesdata.length - 1) - CELLPADDING) + ")")
-				.call(xaxis)
-				.append("text")
-					.style("text-anchor", "middle")
-					.attr("x", PADDING.left + CELLWIDTH*(xi + 1/2))
-					.attr("y", 30)
-					.text(xkey);
-		
-			svg.selectAll("line.x.grid." + "i" + xi)
-				.data(xscale.ticks(5)).enter().append("line")
-				.classed("x grid " + "i" + xi, true)
-				.attr("x1", xscale)
-				.attr("y1", PADDING.top + xi * CELLWIDTH + CELLPADDING)
-				.attr("x2", xscale)
-				.attr("y2", PADDING.top + (axesdata.length - 1) * CELLWIDTH - CELLPADDING);
-		}
-
-		axesdata.forEach(function(yaxisdata, yi) {
-			var ykey = yaxisdata[0];
-
-			if (xi < yi)
-			{
-				// Unique ID for clipping path.
-				var grid_id = "grid" + xi + "_" + yi;
-				var id = "clip" + xi + "_" + yi;
-
-				var yscale = d3.scale.linear()
-					.domain(d3.extent(data, function(d) { return d[ykey]; }))
-					.range([
-						PADDING.top + CELLWIDTH*yi - CELLPADDING,
-						PADDING.top + CELLWIDTH*(yi-1) + CELLPADDING
-					]).nice();
-
-				if (xi == 0)
-				{
-					var yaxis = d3.svg.axis().scale(yscale).orient("left");
-				
-					svg.append("g")
-						.classed("y axis", true)
-						.attr("transform", "translate(" + (PADDING.left + CELLPADDING)
-							+ ",0)")
-						.call(yaxis)
-						.append("text")
-							.attr("transform", "rotate(-90)")
-							.style("text-anchor", "middle")
-							.attr("x", -(PADDING.top + CELLWIDTH*(yi - 1/2)))
-							.attr("y", -40)
-							.text(ykey);
-				
-					svg.selectAll("line.y.grid." + "i" + yi)
-						.data(yscale.ticks(5)).enter().append("line")
-						.classed("y grid " + "i" + yi, true)
-						.attr("x1", PADDING.left + CELLPADDING)
-						.attr("y1", yscale)
-						.attr("x2", PADDING.left + CELLWIDTH * yi - CELLPADDING)
-						.attr("y2", yscale);
-				}
-
-				// Define clipping path for axes.
-				defs.append("clipPath").attr("id", id)
-					.append("rect")
-					.attr("x", PADDING.left + CELLWIDTH * xi + CELLPADDING)
-					.attr("y", PADDING.top + CELLWIDTH * (yi - 1) + CELLPADDING)
-					.attr("width", CELLWIDTH - 2*CELLPADDING)
-					.attr("height", CELLWIDTH - 2*CELLPADDING);
-				
-				svg.append("rect")
-					.classed("axis", true)
-					.attr("x", PADDING.left + CELLWIDTH * xi + CELLPADDING)
-					.attr("y", PADDING.top + CELLWIDTH * (yi - 1) + CELLPADDING)
-					.attr("width", CELLWIDTH - 2*CELLPADDING)
-					.attr("height", CELLWIDTH - 2*CELLPADDING)
-					.style("fill", "white")
-					.style("opacity", 0.5);
-
-				svg.append("g")
-					.attr("clip-path", "url(#" + id + ")")
-					.selectAll("path.scatterpoints").data(data).enter().append("path")
-					.classed("scatterpoints", true)
-					.attr("transform", function(d) {
-						return "translate(" + xscale(d[xkey]) + ","
-							+ yscale(d[ykey]) + ")";
-					})
-					.style('fill', 'gray')
-					.attr("d", d3.svg.symbol().size(4));
-
-				var brush = d3.svg.brush()
-					.x(xscale)
-					.y(yscale)
-					.on("brushstart", function() {
-						brushes.forEach(function(otherBrush) {
-							if (otherBrush !== brush)
-								otherBrush.clear();
-								otherBrush.g.call(otherBrush);
-						});
-					})
-					.on("brush", function() {
-						svg.selectAll("path.scatterpoints")
-							.style('fill', function(d) {
-								if (brush.empty())
-									return 'gray';
-								var e = brush.extent();
-								return d[xkey] >= e[0][0]
-									&& d[xkey] <= e[1][0]
-									&& d[ykey] >= e[0][1]
-									&& d[ykey] <= e[1][1]
-									?  "blue" : "red";
-							})
-						});
-
-				var g = svg.append("g")
-					.attr("class", "brush")
-					.call(brush);
-				brush.g = g;
-
-				brushes.push(brush);
-			}
-		});
-	});
-});
+				// Create grid of scatter plots.
+				d3.scattergrid(data, [
+					{key: "dist"},
+					{key: "ra"},
+					{key: "dec"},
+					{key: "iota"}
+				]);
+			});
 		</script>
 	</body>
 </html>
