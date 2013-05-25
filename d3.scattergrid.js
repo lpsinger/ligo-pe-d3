@@ -55,7 +55,6 @@ d3.scattergrid = function(data, axesinfo) {
 			if (xi >= yi) return;
 
 			// Unique ID for clipping path.
-			var grid_id = "grid" + xi + "_" + yi;
 			var id = "clip" + xi + "_" + yi;
 
 			var yscale = d3.scale.linear()
