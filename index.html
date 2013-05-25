@@ -174,7 +174,7 @@ d3.csv("toa_snr.csv", function(allData) {
 		{
 
 		var path = svg.selectAll(".pp_points")
-			.data(data, function(d) { return d.objid; });
+			.data(data, function(d) { return d.coinc_event_id; });
 
 		path.exit().style('stroke', 'red').transition().attr("transform", function(d) {
 			return "translate(" + xRange(d.searched_prob) + ","
