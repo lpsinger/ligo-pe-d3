@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Scattergrid</title>
+		<link href='http://fonts.googleapis.com/css?family=Arvo|Ubuntu' rel='stylesheet' type='text/css'>
+		<style>
+.line {
+	fill: none;
+	stroke: steelBlue;
+	stroke-width: 2px;
+}
+.diagonal {
+	fill: none;
+	stroke: #999;
+	stroke-dasharray: 3;
+}
+.axis text
+{
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 12px;
+}
+.axis path, .axis line, rect.axis
+{
+	fill: none;
+	stroke: #000;
+	stroke-width: 1.5px;
+	shape-rendering: crispEdges;
+}
+label {
+	position: absolute;
+	top: 80px;
+	left: 400px;
+}
+.grid {
+	stroke: #ccc;
+	stroke-width: 0.5px;
+}
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+body, div {
+	font-family: 'Ubuntu', sans-serif;
+}
+h1 {
+	font-family: 'Arvo', serif;
+	position: absolute;
+	top: 450px;
+	left: 50px;
+}
+		</style>
+	</head>
+	<body>
+		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<script type="text/javascript">
+d3.csv("coinc_inspiral.csv", function(data) {
+
+	var WIDTH = 210,
+		HEIGHT = 210,
+		PADDING = {top: 10, right: 10, bottom: 30, left: 50},
+		axesdata = [
+			["far", d3.scale.log()],
+			["snr", d3.scale.log()],
+			["mass", d3.scale.linear()],
+			["mchirp", d3.scale.linear()]
+		];
+
+	// Convert data to appropriate types.
+	data.forEach(function(d) {
+		delete d.coinc_event_id;
+		d3.keys(d).forEach(function(e) {
+			d[e] = +d[e];
+		});
+	});
+
+	// DEBUG: Decimate data to speed up plotting.
+	{
+		var j = 0;
+		data = data.filter(function (d) { return ((j++) % 10 == 0); });
+	}
+
+	// Create SVG drawing.
+	var svg = d3.select("body").append("svg")
+		.attr("width", WIDTH * axesdata.length)
+		.attr("height", HEIGHT * axesdata.length),
+		defs = svg.append("defs");
+
+	// Create individual axes.
+	axesdata.forEach(function(xaxisdata, xi) {
+		var xkey = xaxisdata[0], xscale = xaxisdata[1];
+
+		xscale
+			.domain(d3.extent(data, function(d) { return d[xkey]; }))
+			.range([WIDTH * xi + PADDING.left, WIDTH * (xi + 1) - PADDING.right]).nice();
+
+		var xaxis = d3.svg.axis().scale(xscale).orient("bottom");
+		
+		if (xi < axesdata.length - 1)
+		{
+			svg.append("g")
+				.classed("x axis", true)
+				.attr("transform", "translate(0,"
+					+ (HEIGHT * axesdata.length - PADDING.bottom) + ")")
+				.call(xaxis)
+				.append("text")
+					.style("text-anchor", "middle")
+					.attr("x", WIDTH * xi + PADDING.left + (WIDTH - PADDING.left - PADDING.right) / 2)
+					.attr("y", 30)
+					.text(xkey);
+
+			svg.selectAll("line.x.grid." + "i" + xi)
+				.data(xscale.ticks(10)).enter().append("line")
+				.classed("x grid " + "i" + xi, true)
+				.attr("x1", xscale)
+				.attr("y1", (xi + 1) * HEIGHT + PADDING.top)
+				.attr("x2", xscale)
+				.attr("y2", axesdata.length * HEIGHT - PADDING.bottom);
+		}
+
+		axesdata.forEach(function(yaxisdata, yi) {
+			var ykey = yaxisdata[0], yscale = yaxisdata[1];
+
+			if (xi < yi)
+			{
+				// Unique ID for clipping path.
+				var grid_id = "grid" + xi + "_" + yi;
+				var id = "clip" + xi + "_" + yi;
+
+				yscale
+					.domain(d3.extent(data, function(d) { return d[ykey]; }))
+					.range([HEIGHT * (yi + 1) - PADDING.bottom, HEIGHT * yi + PADDING.top]).nice();
+
+				if (xi == 0)
+				{
+					var yaxis = d3.svg.axis().scale(yscale).orient("left");
+
+					svg.append("g")
+						.classed("y axis", true)
+						.attr("transform", "translate(" + PADDING.left
+							+ ",0)")
+						.call(yaxis)
+						.append("text")
+							.attr("transform", "rotate(-90)")
+							.style("text-anchor", "middle")
+							.attr("x", -(HEIGHT * yi + PADDING.top + (HEIGHT - PADDING.top - PADDING.bottom) / 2))
+							.attr("y", -40)
+							.text(ykey);
+
+					svg.selectAll("line.y.grid." + "i" + yi)
+						.data(yscale.ticks(10)).enter().append("line")
+						.classed("y grid " + "i" + yi, true)
+						.attr("x1", PADDING.left)
+						.attr("y1", yscale)
+						.attr("x2", WIDTH * yi - PADDING.right)
+						.attr("y2", yscale);
+				}
+
+				// Define clipping path for axes.
+				defs.append("clipPath").attr("id", id)
+					.append("rect")
+					.attr("x", WIDTH * xi + PADDING.left)
+					.attr("y", HEIGHT * yi + PADDING.top)
+					.attr("width", WIDTH - (PADDING.left + PADDING.right))
+					.attr("height", HEIGHT - (PADDING.top + PADDING.bottom));
+
+				svg.append("rect")
+					.classed("axis", true)
+					.attr("x", WIDTH * xi + PADDING.left)
+					.attr("y", HEIGHT * yi + PADDING.top)
+					.attr("width", WIDTH - (PADDING.left + PADDING.right))
+					.attr("height", HEIGHT - (PADDING.top + PADDING.bottom));
+
+				svg.append("g")
+					.attr("clip-path", "url(#" + id + ")")
+					.selectAll("path").data(data).enter().append("path")
+					.attr("transform", function(d) {
+						return "translate(" + xscale(d[xkey]) + ","
+							+ yscale(d[ykey]) + ")";
+					})
+					.style('fill', 'green')
+					.attr("d", d3.svg.symbol().size(4));
+
+				var brush = d3.svg.brush()
+					.x(xscale)
+					.y(yscale);
+					
+				svg.append("g")
+					.attr("class", "brush")
+					.call(brush);
+			}
+		});
+	});
+});
+		</script>
+	</body>
+</html>
