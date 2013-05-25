@@ -22,14 +22,9 @@
 .axis path, .axis line, rect.axis
 {
 	fill: none;
-	stroke: #000;
-	stroke-width: 1.5px;
+	stroke: #999;
+	stroke-width: 1px;
 	shape-rendering: crispEdges;
-}
-label {
-	position: absolute;
-	top: 80px;
-	left: 400px;
 }
 .grid {
 	stroke: #ccc;
@@ -43,28 +38,33 @@ label {
 body, div {
 	font-family: 'Ubuntu', sans-serif;
 }
-h1 {
-	font-family: 'Arvo', serif;
+#header {
 	position: absolute;
-	top: 450px;
-	left: 50px;
+	top: 100px;
+	left: 300px;
+	width: 400px;
 }
 		</style>
 	</head>
 	<body>
+		<div id="header">
+			<h2>LALInference samples</h2>
+			Drag to select ranges of parameters.
+		</div>
 		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 		<script type="text/javascript">
-d3.csv("coinc_inspiral.csv", function(data) {
+d3.tsv("posterior_samples_cold.tsv", function(data) {
 
-	var WIDTH = 210,
-		HEIGHT = 210,
-		PADDING = {top: 10, right: 10, bottom: 30, left: 50},
+	var CELLWIDTH = 200,
+		CELLPADDING = 10,
+		PADDING = {top: 0, right: 0, bottom: 30, left: 60},
 		axesdata = [
-			["far", d3.scale.log()],
-			["snr", d3.scale.log()],
-			["mass", d3.scale.linear()],
-			["mchirp", d3.scale.linear()]
+			["dist"],
+			["ra"],
+			["dec"],
+			["iota"]
 		];
+	var brushes = [];
 
 	// Convert data to appropriate types.
 	data.forEach(function(d) {
@@ -75,24 +75,26 @@ d3.csv("coinc_inspiral.csv", function(data) {
 	});
 
 	// DEBUG: Decimate data to speed up plotting.
-	{
-		var j = 0;
-		data = data.filter(function (d) { return ((j++) % 10 == 0); });
-	}
+	// {
+	// 	var j = 0;
+	// 	data = data.filter(function (d) { return ((j++) % 10 == 0); });
+	// }
 
 	// Create SVG drawing.
 	var svg = d3.select("body").append("svg")
-		.attr("width", WIDTH * axesdata.length)
-		.attr("height", HEIGHT * axesdata.length),
-		defs = svg.append("defs");
+		.attr("width", CELLWIDTH * (axesdata.length - 1) + PADDING.left + PADDING.right)
+		.attr("height", CELLWIDTH * (axesdata.length - 1) + PADDING.top + PADDING.bottom);
+	var defs = svg.append("defs");
 
 	// Create individual axes.
 	axesdata.forEach(function(xaxisdata, xi) {
-		var xkey = xaxisdata[0], xscale = xaxisdata[1];
+		var xkey = xaxisdata[0];
 
-		xscale
+		var xscale = d3.scale.linear()
 			.domain(d3.extent(data, function(d) { return d[xkey]; }))
-			.range([WIDTH * xi + PADDING.left, WIDTH * (xi + 1) - PADDING.right]).nice();
+			.range([
+				PADDING.left + CELLWIDTH * xi + CELLPADDING,
+				PADDING.left + CELLWIDTH * (xi + 1) - CELLPADDING]).nice();
 
 		var xaxis = d3.svg.axis().scale(xscale).orient("bottom");
 		
@@ -101,25 +103,25 @@ d3.csv("coinc_inspiral.csv", function(data) {
 			svg.append("g")
 				.classed("x axis", true)
 				.attr("transform", "translate(0,"
-					+ (HEIGHT * axesdata.length - PADDING.bottom) + ")")
+					+ (PADDING.top + CELLWIDTH * (axesdata.length - 1) - CELLPADDING) + ")")
 				.call(xaxis)
 				.append("text")
 					.style("text-anchor", "middle")
-					.attr("x", WIDTH * xi + PADDING.left + (WIDTH - PADDING.left - PADDING.right) / 2)
+					.attr("x", PADDING.left + CELLWIDTH*(xi + 1/2))
 					.attr("y", 30)
 					.text(xkey);
-
+		
 			svg.selectAll("line.x.grid." + "i" + xi)
-				.data(xscale.ticks(10)).enter().append("line")
+				.data(xscale.ticks(5)).enter().append("line")
 				.classed("x grid " + "i" + xi, true)
 				.attr("x1", xscale)
-				.attr("y1", (xi + 1) * HEIGHT + PADDING.top)
+				.attr("y1", PADDING.top + xi * CELLWIDTH + CELLPADDING)
 				.attr("x2", xscale)
-				.attr("y2", axesdata.length * HEIGHT - PADDING.bottom);
+				.attr("y2", PADDING.top + (axesdata.length - 1) * CELLWIDTH - CELLPADDING);
 		}
 
 		axesdata.forEach(function(yaxisdata, yi) {
-			var ykey = yaxisdata[0], yscale = yaxisdata[1];
+			var ykey = yaxisdata[0];
 
 			if (xi < yi)
 			{
@@ -127,67 +129,96 @@ d3.csv("coinc_inspiral.csv", function(data) {
 				var grid_id = "grid" + xi + "_" + yi;
 				var id = "clip" + xi + "_" + yi;
 
-				yscale
+				var yscale = d3.scale.linear()
 					.domain(d3.extent(data, function(d) { return d[ykey]; }))
-					.range([HEIGHT * (yi + 1) - PADDING.bottom, HEIGHT * yi + PADDING.top]).nice();
+					.range([
+						PADDING.top + CELLWIDTH*yi - CELLPADDING,
+						PADDING.top + CELLWIDTH*(yi-1) + CELLPADDING
+					]).nice();
 
 				if (xi == 0)
 				{
 					var yaxis = d3.svg.axis().scale(yscale).orient("left");
-
+				
 					svg.append("g")
 						.classed("y axis", true)
-						.attr("transform", "translate(" + PADDING.left
+						.attr("transform", "translate(" + (PADDING.left + CELLPADDING)
 							+ ",0)")
 						.call(yaxis)
 						.append("text")
 							.attr("transform", "rotate(-90)")
 							.style("text-anchor", "middle")
-							.attr("x", -(HEIGHT * yi + PADDING.top + (HEIGHT - PADDING.top - PADDING.bottom) / 2))
+							.attr("x", -(PADDING.top + CELLWIDTH*(yi - 1/2)))
 							.attr("y", -40)
 							.text(ykey);
-
+				
 					svg.selectAll("line.y.grid." + "i" + yi)
-						.data(yscale.ticks(10)).enter().append("line")
+						.data(yscale.ticks(5)).enter().append("line")
 						.classed("y grid " + "i" + yi, true)
-						.attr("x1", PADDING.left)
+						.attr("x1", PADDING.left + CELLPADDING)
 						.attr("y1", yscale)
-						.attr("x2", WIDTH * yi - PADDING.right)
+						.attr("x2", PADDING.left + CELLWIDTH * yi - CELLPADDING)
 						.attr("y2", yscale);
 				}
 
 				// Define clipping path for axes.
 				defs.append("clipPath").attr("id", id)
 					.append("rect")
-					.attr("x", WIDTH * xi + PADDING.left)
-					.attr("y", HEIGHT * yi + PADDING.top)
-					.attr("width", WIDTH - (PADDING.left + PADDING.right))
-					.attr("height", HEIGHT - (PADDING.top + PADDING.bottom));
-
+					.attr("x", PADDING.left + CELLWIDTH * xi + CELLPADDING)
+					.attr("y", PADDING.top + CELLWIDTH * (yi - 1) + CELLPADDING)
+					.attr("width", CELLWIDTH - 2*CELLPADDING)
+					.attr("height", CELLWIDTH - 2*CELLPADDING);
+				
 				svg.append("rect")
 					.classed("axis", true)
-					.attr("x", WIDTH * xi + PADDING.left)
-					.attr("y", HEIGHT * yi + PADDING.top)
-					.attr("width", WIDTH - (PADDING.left + PADDING.right))
-					.attr("height", HEIGHT - (PADDING.top + PADDING.bottom));
+					.attr("x", PADDING.left + CELLWIDTH * xi + CELLPADDING)
+					.attr("y", PADDING.top + CELLWIDTH * (yi - 1) + CELLPADDING)
+					.attr("width", CELLWIDTH - 2*CELLPADDING)
+					.attr("height", CELLWIDTH - 2*CELLPADDING)
+					.style("fill", "white")
+					.style("opacity", 0.5);
 
 				svg.append("g")
 					.attr("clip-path", "url(#" + id + ")")
-					.selectAll("path").data(data).enter().append("path")
+					.selectAll("path.scatterpoints").data(data).enter().append("path")
+					.classed("scatterpoints", true)
 					.attr("transform", function(d) {
 						return "translate(" + xscale(d[xkey]) + ","
 							+ yscale(d[ykey]) + ")";
 					})
-					.style('fill', 'green')
+					.style('fill', 'gray')
 					.attr("d", d3.svg.symbol().size(4));
 
 				var brush = d3.svg.brush()
 					.x(xscale)
-					.y(yscale);
-					
-				svg.append("g")
+					.y(yscale)
+					.on("brushstart", function() {
+						brushes.forEach(function(otherBrush) {
+							if (otherBrush !== brush)
+								otherBrush.clear();
+								otherBrush.g.call(otherBrush);
+						});
+					})
+					.on("brush", function() {
+						svg.selectAll("path.scatterpoints")
+							.style('fill', function(d) {
+								if (brush.empty())
+									return 'gray';
+								var e = brush.extent();
+								return d[xkey] >= e[0][0]
+									&& d[xkey] <= e[1][0]
+									&& d[ykey] >= e[0][1]
+									&& d[ykey] <= e[1][1]
+									?  "blue" : "red";
+							})
+						});
+
+				var g = svg.append("g")
 					.attr("class", "brush")
 					.call(brush);
+				brush.g = g;
+
+				brushes.push(brush);
 			}
 		});
 	});
