@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<title>BAYESTAR batch sky localization results</title>
-<link href='http://fonts.googleapis.com/css?family=Arvo|Ubuntu' rel='stylesheet' type='text/css'>
+		<link href='http://fonts.googleapis.com/css?family=Arvo|Ubuntu' rel='stylesheet' type='text/css'>
 		<style>
 .line {
 	fill: none;
@@ -62,7 +62,7 @@ h1 {
 	<body>
 		<h1>BAYESTAR injection summary</h1>
 		<label><input type="range" id="far_cut" min="-14" max="1" step="1" value="-4">FAR &leq; 10<sup><span id="far_cut_text">-4</span></sup></label>
-		<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+		<script src="http://d3js.org/d3.v3.min.js"></script>
 		<script type="text/javascript">
 d3.csv("toa_snr.csv", function(allData) {
 	// These are the names of the fields that should be converted to floats.
@@ -74,8 +74,14 @@ d3.csv("toa_snr.csv", function(allData) {
 			d[fieldName] = +d[fieldName];
 		});
 	});
-	var j = 0;
-	allData = allData.filter(function (d) { return ((j++) % 10 == 0); })
+
+	var transitions = false;
+
+	if (transitions) {
+		// Decimate data if transitions are on.
+		var j = 0;
+		allData = allData.filter(function (d) { return ((j++) % 10 == 0); })
+	}
 
 	// Sort data.
 	allData.sort(function(a, b) {
@@ -164,6 +170,9 @@ d3.csv("toa_snr.csv", function(allData) {
 				return d.far <= min_far;
 			});
 
+		if (transitions)
+		{
+
 		var path = svg.selectAll(".pp_points")
 			.data(data, function(d) { return d.objid; });
 
@@ -192,6 +201,7 @@ d3.csv("toa_snr.csv", function(allData) {
 			})
 			.attr("d", d3.svg.symbol().size(8))
 			.transition().duration(0).style('stroke', 'steelBlue');
+		}
 
 		line
 			.x(function(d, i) { return xRange(d.searched_prob); })
@@ -204,11 +214,13 @@ d3.csv("toa_snr.csv", function(allData) {
 			.transition().style('stroke', '#000');
 
 		far_cut_text.text(log_min_far);
+
 	}
 
 	d3.select("#far_cut").on("change", update);
 
 	update();
+
 });
 		</script>
 	</body>
