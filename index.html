@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<title>BAYESTAR batch sky localization results</title>
-		<link href='http://fonts.googleapis.com/css?family=Arvo|Ubuntu' rel='stylesheet' type='text/css'>
+		<link href='//fonts.googleapis.com/css?family=Arvo|Ubuntu' rel='stylesheet' type='text/css'>
 		<style>
 .line {
 	fill: none;
@@ -62,7 +62,7 @@ h1 {
 	<body>
 		<h1>BAYESTAR injection summary</h1>
 		<label><input type="range" id="far_cut" min="-14" max="1" step="1" value="-4">FAR &leq; 10<sup><span id="far_cut_text">-4</span></sup></label>
-		<script src="http://d3js.org/d3.v3.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
 		<script type="text/javascript">
 d3.csv("toa_snr.csv", function(allData) {
 	// These are the names of the fields that should be converted to floats.
@@ -75,7 +75,7 @@ d3.csv("toa_snr.csv", function(allData) {
 		});
 	});
 
-	var transitions = false;
+	var transitions = true;
 
 	if (transitions) {
 		// Decimate data if transitions are on.
