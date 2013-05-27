@@ -95,14 +95,35 @@ d3.scattergrid = function(data, axesinfo) {
                     .attr("y2", yscale.range()[1]);
             });
 
+            xscale.ticks(5).forEach(function(t) {
+                bgsvg.append("line")
+                    .classed("x grid rule", true)
+                    .attr("x1", xscale(t))
+                    .attr("y1", yscale.range()[0])
+                    .attr("x2", xscale(t))
+                    .attr("y2", yscale.range()[0] + 2*CELLPADDING);
+            });
+
             yscale.ticks(5).forEach(function(t) {
                 bgsvg.append("line")
-                    .classed("x grid", true)
+                    .classed("y grid", true)
                     .attr("x1", xscale.range()[0])
                     .attr("y1", yscale(t))
                     .attr("x2", xscale.range()[1])
                     .attr("y2", yscale(t));
             });
+
+            if (xi < yi - 1)
+            {
+                yscale.ticks(5).forEach(function(t) {
+                    svg.append("line")
+                        .classed("y grid rule", true)
+                        .attr("x1", xscale.range()[1])
+                        .attr("y1", yscale(t))
+                        .attr("x2", xscale.range()[1] + 2*CELLPADDING)
+                        .attr("y2", yscale(t));
+                });
+            }
 
             if (xi == 0)
             {
