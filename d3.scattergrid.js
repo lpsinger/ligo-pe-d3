@@ -51,14 +51,27 @@ d3.scattergrid = function(data, axesinfo) {
         .style("top", 0)
         .style("left", 0);
 
+    var create_scale = function(axisdata, data) {
+        var scale;
+
+        if (axisdata.scale == "log")
+            scale = d3.scale.log();
+        else
+            scale = d3.scale.linear();
+
+        scale.domain(d3.extent(data, function(d) { return d[axisdata.key]; }));
+
+        if (axisdata.nice)
+            scale.nice();
+
+        return scale;
+    };
+
     // Create individual axes.
     axesinfo.forEach(function(xaxisdata, xi) {
-        var xscale = d3.scale.linear()
-            .domain(d3.extent(data, function(d) { return d[xaxisdata.key]; }))
-            .range([
-                PADDING.left + CELLWIDTH * xi + CELLPADDING,
-                PADDING.left + CELLWIDTH * (xi + 1) - CELLPADDING])
-            .nice();
+        var xscale = create_scale(xaxisdata, data).range([
+            PADDING.left + CELLWIDTH * xi + CELLPADDING,
+            PADDING.left + CELLWIDTH * (xi + 1) - CELLPADDING]);
 
         var xaxis = d3.svg.axis().scale(xscale).orient("bottom");
 
@@ -79,12 +92,9 @@ d3.scattergrid = function(data, axesinfo) {
         axesinfo.forEach(function(yaxisdata, yi) {
             if (xi >= yi) return;
 
-            var yscale = d3.scale.linear()
-                .domain(d3.extent(data, function(d) { return d[yaxisdata.key]; }))
-                .range([
-                    PADDING.top + CELLWIDTH*yi - CELLPADDING,
-                    PADDING.top + CELLWIDTH*(yi-1) + CELLPADDING
-                ]).nice();
+            var yscale = create_scale(yaxisdata, data).range([
+                PADDING.top + CELLWIDTH*yi - CELLPADDING,
+                PADDING.top + CELLWIDTH*(yi-1) + CELLPADDING]);
 
             xscale.ticks(5).forEach(function(t) {
                 bgsvg.append("line")
