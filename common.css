@@ -1,0 +1,36 @@
+@import url("//fonts.googleapis.com/css?family=Arvo|Ubuntu");
+
+.axis text
+{
+	font-family: 'Ubuntu', sans-serif;
+	font-size: 12px;
+}
+.axis path, .axis line, rect.axis
+{
+	fill: none;
+	stroke: #999;
+	stroke-width: 1px;
+	shape-rendering: crispEdges;
+}
+.grid {
+	stroke: #eee;
+	stroke-width: 1px;
+	shape-rendering: crispEdges;
+}
+.grid.rule {
+	stroke: #ccc;
+}
+.brush .extent {
+	stroke: #fff;
+	fill-opacity: .125;
+	shape-rendering: crispEdges;
+}
+body, div {
+	font-family: 'Ubuntu', sans-serif;
+}
+#header {
+	position: absolute;
+	top: 100px;
+	left: 300px;
+	width: 400px;
+}
