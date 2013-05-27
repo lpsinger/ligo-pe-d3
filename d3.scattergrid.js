@@ -13,6 +13,14 @@ d3.scattergrid = function(data, axesinfo) {
     var brushes = [];
     var redraws = [];
 
+    // Create background SVG drawing.
+    var bgsvg = d3.select("body").append("svg")
+        .attr("width", total_width)
+        .attr("height", total_height)
+        .style("position", "absolute")
+        .style("top", 0)
+        .style("left", 0);
+
     // Create HTML canvas.
     var canvas = d3.select("body").append("canvas")
         .attr("width", total_width)
@@ -66,14 +74,6 @@ d3.scattergrid = function(data, axesinfo) {
                     .attr("x", PADDING.left + CELLWIDTH*(xi + 1/2))
                     .attr("y", 30)
                     .text(xaxisdata.key);
-
-            svg.selectAll("line.x.grid." + "i" + xi)
-                .data(xscale.ticks(5)).enter().append("line")
-                .classed("x grid " + "i" + xi, true)
-                .attr("x1", xscale)
-                .attr("y1", PADDING.top + xi * CELLWIDTH + CELLPADDING)
-                .attr("x2", xscale)
-                .attr("y2", PADDING.top + (axesinfo.length - 1) * CELLWIDTH - CELLPADDING);
         }
 
         axesinfo.forEach(function(yaxisdata, yi) {
@@ -85,6 +85,24 @@ d3.scattergrid = function(data, axesinfo) {
                     PADDING.top + CELLWIDTH*yi - CELLPADDING,
                     PADDING.top + CELLWIDTH*(yi-1) + CELLPADDING
                 ]).nice();
+
+            xscale.ticks(5).forEach(function(t) {
+                bgsvg.append("line")
+                    .classed("x grid", true)
+                    .attr("x1", xscale(t))
+                    .attr("y1", yscale.range()[0])
+                    .attr("x2", xscale(t))
+                    .attr("y2", yscale.range()[1]);
+            });
+
+            yscale.ticks(5).forEach(function(t) {
+                bgsvg.append("line")
+                    .classed("x grid", true)
+                    .attr("x1", xscale.range()[0])
+                    .attr("y1", yscale(t))
+                    .attr("x2", xscale.range()[1])
+                    .attr("y2", yscale(t));
+            });
 
             if (xi == 0)
             {
@@ -101,14 +119,6 @@ d3.scattergrid = function(data, axesinfo) {
                         .attr("x", -(PADDING.top + CELLWIDTH*(yi - 1/2)))
                         .attr("y", -40)
                         .text(yaxisdata.key);
-
-                svg.selectAll("line.y.grid." + "i" + yi)
-                    .data(yscale.ticks(5)).enter().append("line")
-                    .classed("y grid " + "i" + yi, true)
-                    .attr("x1", PADDING.left + CELLPADDING)
-                    .attr("y1", yscale)
-                    .attr("x2", PADDING.left + CELLWIDTH * yi - CELLPADDING)
-                    .attr("y2", yscale);
             }
 
             redraws.push(function(predicate) {
