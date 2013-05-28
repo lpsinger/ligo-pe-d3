@@ -3,21 +3,26 @@
     <head>
         <title>Scattergrid</title>
         <link href="common.css" rel="stylesheet" type="text/css">
-        <style>
-            .diagonal {
-                fill: none;
-                stroke: #999;
-                stroke-dasharray: 3;
-            }
-            .pp_line {
-                fill: none;
-                stroke: #000;
-            }
+        <link href='//fonts.googleapis.com/css?family=Geo' rel='stylesheet' type='text/css'>
+        <style type="text/css">
+        .progress-meter text {
+            font-family: 'Geo',sans-serif;
+        }
+        .diagonal {
+            fill: none;
+            stroke: #999;
+            stroke-dasharray: 3;
+        }
+        .pp_line {
+            fill: none;
+            stroke: #000;
+        }
         </style>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
-        <script src="d3.scattergrid.js" charset="utf-8"></script>
     </head>
     <body>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
+		<script src="d3.progress.min.js"></script>
+		<script src="d3.scattergrid.min.js" charset="utf-8"></script>
         <script type="text/javascript">
             d3.csv("toa_snr.csv", function(data) {
 
@@ -137,7 +142,12 @@
                     {key: "searched_prob"}],
                     update
                 );
-            });
+                svg.style("opacity", "0");
+                d3.selectAll(".scattergrid").style("opacity", 0);
+
+                svg.transition().delay(250).style("opacity", "1");
+                d3.selectAll(".scattergrid").transition().delay(250).style("opacity", "1");
+            }).get();
         </script>
     </body>
 </html>
