@@ -1,4 +1,4 @@
-d3.scattergrid = function(data, axesinfo) {
+d3.scattergrid = function(data, axesinfo, callback) {
 
     // Sizing information.
     var CELLWIDTH = 200,
@@ -196,14 +196,17 @@ d3.scattergrid = function(data, axesinfo) {
                     });
                 })
                 .on("brush", function() {
-                    redraw(function(d) {
-                            var e = brush.extent();
+                    var e = brush.extent();
+                    var predicate = function(d) {
                             return d[xaxisdata.key] >= e[0][0]
                                 && d[xaxisdata.key] <= e[1][0]
                                 && d[yaxisdata.key] >= e[0][1]
                                 && d[yaxisdata.key] <= e[1][1];
-                        })
-                    });
+                        };
+                    redraw(predicate);
+                    if (callback)
+                        callback(predicate);
+                });
 
             var g = svg.append("g")
                 .attr("class", "brush")
@@ -215,4 +218,6 @@ d3.scattergrid = function(data, axesinfo) {
     });
 
     redraw(alwaysFalse);
+    if (callback)
+        callback(alwaysFalse);
 };

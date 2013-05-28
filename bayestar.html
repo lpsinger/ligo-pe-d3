@@ -1,34 +1,139 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Scattergrid</title>
-		<link href="common.css" rel="stylesheet" type="text/css">
-		<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
-		<script src="d3.scattergrid.min.js" charset="utf-8"></script>
-	</head>
-	<body>
-		<div id="header">
-			<h2>BAYESTAR injection summary</h2>
-			Drag to select ranges of parameters.
-		</div>
-		<script type="text/javascript">
-			d3.csv("toa_snr.csv", function(data) {
+    <head>
+        <title>Scattergrid</title>
+        <link href="common.css" rel="stylesheet" type="text/css">
+        <style>
+            .diagonal {
+                fill: none;
+                stroke: #999;
+                stroke-dasharray: 3;
+            }
+            .pp_line {
+                fill: none;
+                stroke: #000;
+            }
+        </style>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
+        <script src="d3.scattergrid.js" charset="utf-8"></script>
+    </head>
+    <body>
+        <script type="text/javascript">
+            d3.csv("toa_snr.csv", function(data) {
 
-				// Convert data to numeric types.
-				data.forEach(function(d) {
-					d3.keys(d).forEach(function(e) {
-						d[e] = +d[e];
-					});
-				});
+                // Regular expression for stripping off the 'table:column:'
+                // prefix from LIGO-LW IDs.
+                var re = /.+:(\d+)/;
 
-				// Create grid of scatter plots.
-				d3.scattergrid(data, [
-					{key: "far", scale: "log"},
-					{key: "snr"},
-					{key: "offset"},
-					{key: "searched_prob"}
-				]);
-			});
-		</script>
-	</body>
+                // Convert data to numeric types.
+                data.forEach(function(d) {
+                    d.coinc_event_id = re.exec(d.coinc_event_id)[1];
+                    d.simulation_id = re.exec(d.simulation_id)[1];
+                    d3.keys(d).forEach(function(e) {
+                        d[e] = +d[e];
+                    });
+                });
+
+                // Sort data.
+                data.sort(function(a, b) {
+                    return d3.ascending(a.searched_prob, b.searched_prob);
+                });
+
+                var
+                    WIDTH = 400,
+                    HEIGHT = 400,
+                    MARGINS = {top: 20, right: 20, bottom: 50, left: 50},
+                    xscale = d3.scale.linear()
+                        .domain([0, 1])
+                        .range([MARGINS.left, WIDTH - MARGINS.right]),
+                    yscale = d3.scale.linear()
+                        .domain([0, 1])
+                        .range([HEIGHT - MARGINS.top, MARGINS.bottom]),
+                    xAxis = d3.svg.axis()
+                        .scale(xscale)
+                        .orient("bottom"),
+                    yAxis = d3.svg.axis()
+                        .scale(yscale)
+                        .orient("left");
+
+                var svg = d3.select("body").append("svg")
+                    .attr("width", WIDTH)
+                    .attr("heigth", HEIGHT)
+                    .style("position", "absolute")
+                    .style("top", 0)
+                    .style("left", 500);
+
+                var line = d3.svg.line()
+                    .interpolate('linear');
+
+                svg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + (HEIGHT - MARGINS.top) + ")")
+                    .call(xAxis)
+                .append("text")
+                    .attr("x", (WIDTH - MARGINS.left - MARGINS.right)/2 + MARGINS.left)
+                    .attr("y", "3em")
+                    .style("text-anchor", "middle")
+                    .text("Searched probability");
+
+                svg.append("g")
+                    .attr("class", "y axis")
+                    .attr("transform", "translate(" + (MARGINS.left) + ",0)")
+                    .call(yAxis)
+                .append("text")
+                    .attr("transform", "rotate(-90)")
+                    .attr("x", -((HEIGHT - MARGINS.top - MARGINS.bottom)/2
+                        + MARGINS.bottom))
+                    .attr("y", "-3em")
+                    .style("text-anchor", "middle")
+                    .text("Cumulative fraction");
+
+                svg.append("path")
+                    .attr("class", "diagonal")
+                    .datum([{x: 0, y: 0}, {x: 1, y: 1}])
+                    .attr("d", d3.svg.line()
+                        .x(function(d) { return xscale(d.x); })
+                        .y(function(d) { return yscale(d.y); })
+                    );
+
+                svg.selectAll(".x.grid").data(xscale.ticks(5)).enter()
+                    .append("path")
+                    .attr("class", "x grid")
+                    .attr("d", function(d) {
+                        return "M" + xscale(d) + " " + yscale(1) + "L" + xscale(d) + " " + (yscale(0));
+                    });
+
+                svg.selectAll(".y.grid").data(yscale.ticks(5)).enter()
+                    .append("path")
+                    .attr("class", "y grid")
+                    .attr("d", function(d) {
+                        return "M" + xscale(0) + " " + yscale(d) + "L" + xscale(1) + " " + (yscale(d));
+                    });
+
+                svg.append("path")
+                    .attr("class", "pp_line");
+
+                function update(predicate) {
+                    var filteredData = data.filter(predicate);
+
+                    line
+                        .x(function(d, i) { return xscale(d.searched_prob); })
+                        .y(function(d, i) { return yscale(i / filteredData.length); });
+
+                    svg.selectAll('.pp_line')
+                        .datum(filteredData)
+                        .attr("d", line);
+                }
+
+                // Create grid of scatter plots.
+                d3.scattergrid(data, [
+                    {key: "far", scale: "log", nice: true},
+                    {key: "snr", scale: "log"},
+                    {key: "offset"},
+                    {key: "searched_prob"}],
+                    update
+                );
+            });
+        </script>
+    </body>
 </html>
