@@ -19,14 +19,19 @@
 					d3.keys(d).forEach(function(e) {
 						d[e] = +d[e];
 					});
+					d.ra *= 180 / Math.PI;
+					d.dec *= 180 / Math.PI;
+					d.iota *= 180 / Math.PI;
 				});
 
 				// Create grid of scatter plots.
 				d3.scattergrid(data, [
-					{key: "dist"},
-					{key: "ra"},
-					{key: "dec"},
-					{key: "iota"}
+					{key: "dist", nice: true},
+					{key: "ra", domain: [0, 360]},
+					{key: "dec", domain: [-90, 90]},
+					{key: "iota", domain: [0, 180]},
+					{key: "m1", nice: true},
+					{key: "m2", nice: true}
 				]);
 			});
 		</script>
