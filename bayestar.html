@@ -32,6 +32,10 @@
                     d3.keys(d).forEach(function(e) {
                         d[e] = +d[e];
                     });
+                    d.log10_far = Math.log(d.far) / Math.LN10;
+                    d.log10_snr = Math.log(d.snr) / Math.LN10;
+                    delete d.far;
+                    delete d.snr;
                 });
 
                 // Sort data.
@@ -127,8 +131,8 @@
 
                 // Create grid of scatter plots.
                 d3.scattergrid(data, [
-                    {key: "far", scale: "log", nice: true},
-                    {key: "snr", scale: "log"},
+                    {key: "log10_far", nice: true},
+                    {key: "log10_snr", nice: true},
                     {key: "offset"},
                     {key: "searched_prob"}],
                     update
