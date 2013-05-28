@@ -59,7 +59,10 @@ d3.scattergrid = function(data, axesinfo, callback) {
         else
             scale = d3.scale.linear();
 
-        scale.domain(d3.extent(data, function(d) { return d[axisdata.key]; }));
+        if (axisdata.domain)
+            scale.domain(axisdata.domain);
+        else
+            scale.domain(d3.extent(data, function(d) { return d[axisdata.key]; }));
 
         if (axisdata.nice)
             scale.nice();
