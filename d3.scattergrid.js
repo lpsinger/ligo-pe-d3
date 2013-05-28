@@ -15,6 +15,7 @@ d3.scattergrid = function(data, axesinfo, callback) {
 
     // Create background SVG drawing.
     var bgsvg = d3.select("body").append("svg")
+        .classed("scattergrid", true)
         .attr("width", total_width)
         .attr("height", total_height)
         .style("position", "absolute")
@@ -23,6 +24,7 @@ d3.scattergrid = function(data, axesinfo, callback) {
 
     // Create HTML canvas.
     var canvas = d3.select("body").append("canvas")
+        .classed("scattergrid", true)
         .attr("width", total_width)
         .attr("height", total_height)
         .style("position", "absolute")
@@ -45,6 +47,7 @@ d3.scattergrid = function(data, axesinfo, callback) {
 
     // Create SVG drawing.
     var svg = d3.select("body").append("svg")
+        .classed("scattergrid", true)
         .attr("width", total_width)
         .attr("height", total_height)
         .style("position", "absolute")
