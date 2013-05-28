@@ -22,15 +22,14 @@ g.append("path")
 	.style("fill", "#ccc");
 var spinner = g.append("path")
 	.style("fill", "#000");
-g.append("text")
+var text = g.append("text")
 	.style("text-anchor", "middle")
-	.text("by your command");
+	.text("loading");
 
-d3.xhr = function(url, mimeType, callback) {
+d3.xhr = function(url, total, mimeType, callback) {
 
 	var xhr = old_xhr(url, mimeType, callback);
 	xhr.on("progress", function() {
-		var total = d3.event.target.getResponseHeader('Content-Length');
 		spinner.attr("d",
 			arc.endAngle(2 * Math.PI * d3.event.loaded / total));
 	});
