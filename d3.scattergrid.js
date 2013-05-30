@@ -219,7 +219,10 @@ d3.scattergrid = function(data, axesinfo, callback) {
                 })
                 .on("brushend", function() {
                     var e = brush.extent();
-                    $.bbq.pushState({scattergrid: {extent: e, xi: xi, yi: yi}});
+                    if (brush.empty())
+                        $.bbq.removeState("scattergrid");
+                    else
+                        $.bbq.pushState({scattergrid: {extent: e, xi: xi, yi: yi}});
                 });
 
             if (state && state.xi == xi && state.yi == yi)
