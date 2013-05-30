@@ -20,7 +20,9 @@
         </style>
     </head>
     <body>
-        <div><!--this pointless div seems to be necessary to make the progress wheel disappear...--></div>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-migrate/1.2.1/jquery-migrate.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery.ba-bbq/1.2.1/jquery.ba-bbq.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
         <script src="d3.progress.min.js"></script>
         <script src="d3.scattergrid.min.js" charset="utf-8"></script>
@@ -67,6 +69,7 @@
                         .orient("left");
 
                 var svg = d3.select("body").append("svg")
+                    .style("opacity", 0)
                     .attr("width", WIDTH)
                     .attr("heigth", HEIGHT)
                     .style("position", "absolute")
@@ -143,7 +146,6 @@
                     {key: "searched_prob"}],
                     update
                 );
-                svg.style("opacity", "0");
                 d3.selectAll(".scattergrid").style("opacity", 0);
 
                 svg.transition().delay(250).style("opacity", "1");

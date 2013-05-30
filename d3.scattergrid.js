@@ -13,6 +13,8 @@ d3.scattergrid = function(data, axesinfo, callback) {
     var brushes = [];
     var redraws = [];
 
+    var state = $.bbq.getState("scattergrid");
+
     // Create background SVG drawing.
     var bgsvg = d3.select("body").append("svg")
         .classed("scattergrid", true)
@@ -44,6 +46,8 @@ d3.scattergrid = function(data, axesinfo, callback) {
     var alwaysFalse = function() {
         return false;
     };
+
+    var predicate = alwaysFalse;
 
     // Create SVG drawing.
     var svg = d3.select("body").append("svg")
@@ -212,7 +216,23 @@ d3.scattergrid = function(data, axesinfo, callback) {
                     redraw(predicate);
                     if (callback)
                         callback(predicate);
+                })
+                .on("brushend", function() {
+                    var e = brush.extent();
+                    $.bbq.pushState({scattergrid: {extent: e, xi: xi, yi: yi}});
                 });
+
+            if (state && state.xi == xi && state.yi == yi)
+            {
+                var e = state.extent;
+                brush.extent(e);
+                predicate = function(d) {
+                    return d[xaxisdata.key] >= e[0][0]
+                        && d[xaxisdata.key] <= e[1][0]
+                        && d[yaxisdata.key] >= e[0][1]
+                        && d[yaxisdata.key] <= e[1][1];
+                }
+            }
 
             var g = svg.append("g")
                 .attr("class", "brush")
@@ -223,7 +243,7 @@ d3.scattergrid = function(data, axesinfo, callback) {
         });
     });
 
-    redraw(alwaysFalse);
+    redraw(predicate);
     if (callback)
-        callback(alwaysFalse);
+        callback(predicate);
 };

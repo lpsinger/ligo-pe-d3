@@ -30,6 +30,7 @@ d3.xhr = function() {
     var pctformat = d3.format(".2p");
 
     return function(url, mimeType, callback) {
+        g.attr("transform", "scale(1)");
         var xhr = old_xhr(url, mimeType, null);
         xhr.on("progress", function() {
             var completeness = d3.event.loaded / d3.event.total;
@@ -41,8 +42,7 @@ d3.xhr = function() {
         });
         xhr.on("load", function(request) {
             g.transition().delay(250)
-            .attr("transform", "scale(0)")
-            .transition(svg).remove();
+            .attr("transform", "scale(0)");
             if (callback)
                 callback(request);
         });
