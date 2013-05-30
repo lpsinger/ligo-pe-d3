@@ -6,7 +6,7 @@ Inspired by Jeff Heer's talk at the
 on May 23, 2013, I am experimenting with using [D3.js](http://d3js.org) to
 visualize LIGO parameter estimation results.
 
-The nifties example is [scattergrid.html](https://github.com/lpsinger/ligo-pe-d3/blob/master/scattergrid.html),
+The most sophisticated example is [scattergrid.html](https://github.com/lpsinger/ligo-pe-d3/blob/master/scattergrid.html),
 a grid of all possible pairwise scatter plots of MCMC samples from a particular parameter estimation run.
 It is similar to D3's [scatterplot matrixe example](http://mbostock.github.io/d3/talk/20111116/iris-splom.html), but should scale to larger data sets because the scatter points are rendered on an overlaid [HTML5 canvas](https://developer.mozilla.org/en-US/docs/Web/HTML/Canvas/Tutorial) instead of being displayed as separate elements of an SVG graphic.
 
