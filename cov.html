@@ -10,18 +10,23 @@
         <div id="cov"></div>
         <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
+        <script src="//raw.github.com/mbostock/d3/master/lib/colorbrewer/colorbrewer.js"></script>
         <script type="text/javascript" src="tipsy/jquery.tipsy.js"></script>
         <script type="text/javascript">
-            d3.tsv("posterior_samples_cold.tsv", function(data) {
+            d3.tsv("posterior_samples_cold_all.tsv", function(data) {
 
                 // Convert data to numeric types.
                 data.forEach(function(d) {
+                    delete d['chain'];
+                    delete d['post'];
+                    delete d['logl'];
+                    delete d['logprior'];
+                    delete d['cycle'];
+                    delete d['f_lower'];
+                    delete d[''];
                     d3.keys(d).forEach(function(e) {
                         d[e] = +d[e];
                     });
-                    d.ra *= 180 / Math.PI;
-                    d.dec *= 180 / Math.PI;
-                    d.iota *= 180 / Math.PI;
                 });
 
                 var keys = d3.keys(data[0]),
@@ -34,6 +39,7 @@
                     });
                 });
                 var cov = {};
+                var horizRule, vertRule;
                 keys.forEach(function (key1) {
                     var cov2 = {};
                     cov[key1] = cov2;
@@ -43,20 +49,26 @@
                         });
                     });
                 });
-                var mincov = d3.min(d3.values(cov), function (cov2) {
-                            return d3.min(d3.values(cov2));
+                var minabscov = d3.min(d3.values(cov), function (cov2) {
+                            return d3.min(d3.values(cov2), Math.abs);
                         }),
-                    maxcov = d3.max(d3.values(cov), function (cov2) {
-                            return d3.max(d3.values(cov2));
+                    maxabscov = d3.max(d3.values(cov), function (cov2) {
+                            return d3.max(d3.values(cov2), Math.abs);
                         }),
-                    scale = d3.scale.linear()
-                        .domain([mincov, maxcov])
-                        .range(["yellow", "red"]),
+                    minvar = d3.min(keys, function (key) { return cov[key][key]; }),
+                    maxvar = d3.max(keys, function (key) { return cov[key][key]; }),
+                    colorscale = colorbrewer.Spectral[4],
+                    scalepos = d3.scale.log()
+                        .domain([minabscov, maxvar])
+                        .range([colorscale[1], colorscale[0]]),
+                    scaleneg = d3.scale.log()
+                        .domain([minabscov, maxvar])
+                        .range([colorscale[colorscale.length - 2], colorscale[colorscale.length - 1]]),
                     cellwidth = 16,
-                    textwidth = 64,
+                    textwidth = 100,
                     svg = d3.select("#cov").append("svg")
                         .attr("width", 2 * textwidth + cellwidth * npar)
-                        .attr("height", cellwidth * npar);
+                        .attr("height", textwidth + (cellwidth + 1) * npar);
                 var keypairs = [];
                 keys.forEach(function (key1) {
                     keys.forEach(function (key2) {
@@ -65,6 +77,7 @@
                 });
                 svg.selectAll("rect").data(keypairs)
                     .enter().append("rect")
+                    .classed("val", true)
                     .attr("width", cellwidth)
                     .attr("height", cellwidth)
                     .attr("stroke", "white")
@@ -73,20 +86,50 @@
                         return textwidth + cellwidth * keys.indexOf(d[0]);
                     })
                     .attr("y", function (d) {
-                        return cellwidth * keys.indexOf(d[1]);
+                        return textwidth + cellwidth * keys.indexOf(d[1]);
                     })
                     .attr("fill", function (d) {
-                        return scale(cov[d[0]][d[1]])
+                        var c = cov[d[0]][d[1]];
+                        return (c > 0) ? scalepos(c) : scaleneg(-c);
+                    })
+                    .on("mouseover", function (d) {
+                        horizRule.transition().delay()
+                            .attr("y", textwidth + keys.indexOf(d[1]) * cellwidth)
+                            .attr("opacity", 1);
+                        vertRule.transition().delay()
+                            .attr("x", textwidth + keys.indexOf(d[0]) * cellwidth)
+                            .attr("opacity", 1);
+                    })
+                    .on("mouseout", function (d) {
+                        horizRule.transition().delay()
+                            .attr("opacity", 0);
+                        vertRule.transition().delay()
+                            .attr("opacity", 0);
                     });
-                svg.selectAll("text").data(keys, function (d) { return d; })
+                svg.selectAll("text.xlabel").data(keys, function (d) { return d; })
                     .enter().append("text")
+                    .classed("xlabel", true)
                     .attr("text-anchor", "end")
                     .attr("alignment-baseline", "central")
                     .attr("font-size", "10pt")
-                    .attr("x", textwidth - cellwidth)
+                    .attr("x", textwidth - 0.5 * cellwidth)
                     .attr("y", function (d) {
-                        return cellwidth * (keys.indexOf(d) + 0.5);
+                        return textwidth + cellwidth * (keys.indexOf(d) + 0.5);
                     })
+                    .text(function (d) {
+                        return d;
+                    });
+                svg.selectAll("g.ylabel").data(keys, function (d) { return d; })
+                    .enter().append("g")
+                    .classed("ylabel", true)
+                    .attr("transform", function (d) {
+                        return "translate(" + (textwidth + cellwidth * (keys.indexOf(d) + 0.5)) + "," + (textwidth - 0.5 * cellwidth) + ")";
+                    })
+                    .append("text")
+                    .attr("text-anchor", "start")
+                    .attr("alignment-baseline", "central")
+                    .attr("font-size", "10pt")
+                    .attr("transform", "rotate(-90)")
                     .text(function (d) {
                         return d;
                     });
@@ -99,16 +142,39 @@
                         return textwidth + cellwidth * keys.indexOf(d[0]);
                     })
                     .attr("y", function (d) {
-                        return cellwidth * keys.indexOf(d[1]);
+                        return textwidth + cellwidth * keys.indexOf(d[1]);
                     });
-                svg.selectAll("text").data(keys, function (d) { return d; })
+                svg.selectAll(".xlabel").data(keys, function (d) { return d; })
                     .transition().delay(1000)
                     .attr("y", function (d) {
-                        return cellwidth * (keys.indexOf(d) + 0.5);
+                        return textwidth + cellwidth * (keys.indexOf(d) + 0.5);
                     });
+                svg.selectAll(".ylabel").data(keys, function (d) { return d; })
+                    .transition().delay(1000)
+                    .attr("transform", function (d) {
+                        return "translate(" + (textwidth + cellwidth * (keys.indexOf(d) + 0.5)) + "," + (textwidth - 0.5 * cellwidth) + ")";
+                    });
+                horizRule = svg.append("rect")
+                    .attr("fill", "none")
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 3)
+                    .attr("width", cellwidth * npar)
+                    .attr("height", cellwidth)
+                    .attr("x", textwidth)
+                    .attr("opacity", 0);
+                vertRule = svg.append("rect")
+                    .attr("fill", "none")
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 3)
+                    .attr("width", cellwidth)
+                    .attr("height", cellwidth * npar)
+                    .attr("y", textwidth)
+                    .attr("opacity", 0);
                 var fmt = d3.format(".5g");
-                $("#cov svg rect").tipsy({
+                $("#cov svg rect.val").tipsy({
                     gravity: 'w',
+                    offset: 4,
+                    delayIn: 500,
                     html: true,
                     title: function() {
                         var d = this.__data__;
