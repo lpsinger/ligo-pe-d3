@@ -137,7 +137,7 @@
                     return cov[key2][key2] - cov[key1][key1];
                 });
                 svg.selectAll("rect").data(keypairs)
-                    .transition().delay(1000)
+                    .transition().delay()
                     .attr("x", function (d) {
                         return textwidth + cellwidth * keys.indexOf(d[0]);
                     })
@@ -145,12 +145,12 @@
                         return textwidth + cellwidth * keys.indexOf(d[1]);
                     });
                 svg.selectAll(".xlabel").data(keys, function (d) { return d; })
-                    .transition().delay(1000)
+                    .transition().delay()
                     .attr("y", function (d) {
                         return textwidth + cellwidth * (keys.indexOf(d) + 0.5);
                     });
                 svg.selectAll(".ylabel").data(keys, function (d) { return d; })
-                    .transition().delay(1000)
+                    .transition().delay()
                     .attr("transform", function (d) {
                         return "translate(" + (textwidth + cellwidth * (keys.indexOf(d) + 0.5)) + "," + (textwidth - 0.5 * cellwidth) + ")";
                     });
