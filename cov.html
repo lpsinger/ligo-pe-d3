@@ -106,12 +106,13 @@
                     .attr("y", function (d) {
                         return cellwidth * (keys.indexOf(d) + 0.5);
                     });
+                var fmt = d3.format(".5g");
                 $("#cov svg rect").tipsy({
-                    gravity: 's',
+                    gravity: 'w',
                     html: true,
                     title: function() {
                         var d = this.__data__;
-                        return "cov(" + d[0] + "," + d[1] + ") = " + cov[d[0]][d[1]]; 
+                        return "<div style=\"font-size:10pt\">cov(" + d[0] + "," + d[1] + ") = </div><div style=\"font-size:12pt\">" + fmt(cov[d[0]][d[1]]) + "</div>"; 
                     }
                 });
             });
