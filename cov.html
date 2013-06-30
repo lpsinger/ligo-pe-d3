@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Covariance</title>
+        <link href="common.css" rel="stylesheet" type="text/css">
+        <link href="tipsy/tipsy.css" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <h1>Covariance matrix</h1>
+        <div id="cov"></div>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.1.6/d3.min.js" charset="utf-8"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
+        <script type="text/javascript" src="tipsy/jquery.tipsy.js"></script>
+        <script type="text/javascript">
+            d3.tsv("posterior_samples_cold.tsv", function(data) {
+
+                // Convert data to numeric types.
+                data.forEach(function(d) {
+                    d3.keys(d).forEach(function(e) {
+                        d[e] = +d[e];
+                    });
+                    d.ra *= 180 / Math.PI;
+                    d.dec *= 180 / Math.PI;
+                    d.iota *= 180 / Math.PI;
+                });
+
+                var keys = d3.keys(data[0]),
+                    npar = keys.length;
+                keys.sort();
+                var means = {};
+                keys.forEach(function (key) {
+                    means[key] = d3.mean(data, function (datum) {
+                        return datum[key];
+                    });
+                });
+                var cov = {};
+                keys.forEach(function (key1) {
+                    var cov2 = {};
+                    cov[key1] = cov2;
+                    keys.forEach(function (key2) {
+                        cov2[key2] = d3.mean(data, function (datum) {
+                            return (datum[key1] - means[key1]) * (datum[key2] - means[key2]);
+                        });
+                    });
+                });
+                var mincov = d3.min(d3.values(cov), function (cov2) {
+                            return d3.min(d3.values(cov2));
+                        }),
+                    maxcov = d3.max(d3.values(cov), function (cov2) {
+                            return d3.max(d3.values(cov2));
+                        }),
+                    scale = d3.scale.linear()
+                        .domain([mincov, maxcov])
+                        .range(["yellow", "red"]),
+                    cellwidth = 16,
+                    textwidth = 64,
+                    svg = d3.select("#cov").append("svg")
+                        .attr("width", 2 * textwidth + cellwidth * npar)
+                        .attr("height", cellwidth * npar);
+                var keypairs = [];
+                keys.forEach(function (key1) {
+                    keys.forEach(function (key2) {
+                        keypairs.push([key1, key2]);
+                    });
+                });
+                svg.selectAll("rect").data(keypairs)
+                    .enter().append("rect")
+                    .attr("width", cellwidth)
+                    .attr("height", cellwidth)
+                    .attr("stroke", "white")
+                    .attr("line-width", 2)
+                    .attr("x", function (d) {
+                        return textwidth + cellwidth * keys.indexOf(d[0]);
+                    })
+                    .attr("y", function (d) {
+                        return cellwidth * keys.indexOf(d[1]);
+                    })
+                    .attr("fill", function (d) {
+                        return scale(cov[d[0]][d[1]])
+                    });
+                svg.selectAll("text").data(keys, function (d) { return d; })
+                    .enter().append("text")
+                    .attr("text-anchor", "end")
+                    .attr("alignment-baseline", "central")
+                    .attr("font-size", "10pt")
+                    .attr("x", textwidth - cellwidth)
+                    .attr("y", function (d) {
+                        return cellwidth * (keys.indexOf(d) + 0.5);
+                    })
+                    .text(function (d) {
+                        return d;
+                    });
+                keys.sort(function (key1, key2) {
+                    return cov[key2][key2] - cov[key1][key1];
+                });
+                svg.selectAll("rect").data(keypairs)
+                    .transition().delay(1000)
+                    .attr("x", function (d) {
+                        return textwidth + cellwidth * keys.indexOf(d[0]);
+                    })
+                    .attr("y", function (d) {
+                        return cellwidth * keys.indexOf(d[1]);
+                    });
+                svg.selectAll("text").data(keys, function (d) { return d; })
+                    .transition().delay(1000)
+                    .attr("y", function (d) {
+                        return cellwidth * (keys.indexOf(d) + 0.5);
+                    });
+                $("#cov svg rect").tipsy({
+                    gravity: 's',
+                    html: true,
+                    title: function() {
+                        var d = this.__data__;
+                        return "" + cov[d[0]][d[1]]; 
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

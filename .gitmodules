@@ -1,0 +1,3 @@
+[submodule "tipsy"]
+	path = tipsy
+	url = https://gist.github.com/1373263.git
