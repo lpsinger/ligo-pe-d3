@@ -111,7 +111,7 @@
                     html: true,
                     title: function() {
                         var d = this.__data__;
-                        return "" + cov[d[0]][d[1]]; 
+                        return "cov(" + d[0] + "," + d[1] + ") = " + cov[d[0]][d[1]]; 
                     }
                 });
             });
