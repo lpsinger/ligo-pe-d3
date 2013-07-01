@@ -53,10 +53,6 @@
                 var minabscov = d3.min(d3.values(cov), function (cov2) {
                             return d3.min(d3.values(cov2), Math.abs);
                         }),
-                    maxabscov = d3.max(d3.values(cov), function (cov2) {
-                            return d3.max(d3.values(cov2), Math.abs);
-                        }),
-                    minvar = d3.min(keys, function (key) { return cov[key][key]; }),
                     maxvar = d3.max(keys, function (key) { return cov[key][key]; }),
                     colorscale = colorbrewer.Spectral[4],
                     scalepos = d3.scale.log()
