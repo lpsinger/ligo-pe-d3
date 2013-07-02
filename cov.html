@@ -50,17 +50,15 @@
                         });
                     });
                 });
-                var minabscov = d3.min(d3.values(cov), function (cov2) {
-                            return d3.min(d3.values(cov2), Math.abs);
-                        }),
+                var minvar = d3.min(keys, function (key) { return cov[key][key]; }),
                     maxvar = d3.max(keys, function (key) { return cov[key][key]; }),
-                    colorscale = colorbrewer.Spectral[4],
-                    scalepos = d3.scale.log()
-                        .domain([minabscov, maxvar])
-                        .range([colorscale[1], colorscale[0]]),
-                    scaleneg = d3.scale.log()
-                        .domain([minabscov, maxvar])
-                        .range([colorscale[colorscale.length - 2], colorscale[colorscale.length - 1]]),
+                    colorscale = colorbrewer.Spectral[3],
+                    scalediag = d3.scale.log()
+                        .domain([minvar, Math.sqrt(minvar * maxvar), maxvar])
+                        .range(colorscale),
+                    scaleoffdiag = d3.scale.linear()
+                        .domain([-1, 0, 1])
+                        .range(colorscale),
                     cellwidth = 16,
                     textwidth = 100,
                     svg = d3.select("#cov").append("svg")
@@ -87,7 +85,10 @@
                     })
                     .attr("fill", function (d) {
                         var c = cov[d[0]][d[1]];
-                        return (c > 0) ? scalepos(c) : scaleneg(-c);
+                        if (d[0] == d[1])
+                            return scalediag(c);
+                        else
+                            return scaleoffdiag(c / Math.sqrt(cov[d[0]][d[0]] * cov[d[1]][d[1]]));
                     })
                     .on("mouseover", function (d) {
                         horizRule.transition().delay()
