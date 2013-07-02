@@ -52,13 +52,13 @@
                 });
                 var minvar = d3.min(keys, function (key) { return cov[key][key]; }),
                     maxvar = d3.max(keys, function (key) { return cov[key][key]; }),
-                    colorscale = colorbrewer.Spectral[3],
+                    colorscale = colorbrewer.Spectral[6],
                     scalediag = d3.scale.log()
                         .domain([minvar, Math.sqrt(minvar * maxvar), maxvar])
-                        .range(colorscale),
+                        .range([colorscale[2], colorscale[1], colorscale[0]]),
                     scaleoffdiag = d3.scale.linear()
                         .domain([-1, 0, 1])
-                        .range(colorscale),
+                        .range([colorscale[5], colorscale[4], colorscale[3]]),
                     cellwidth = 16,
                     textwidth = 100,
                     svg = d3.select("#cov").append("svg")
